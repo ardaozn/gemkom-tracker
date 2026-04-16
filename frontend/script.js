@@ -2,8 +2,7 @@
    Gemkom - Makine Not Takip Sistemi
    Frontend JavaScript
    ========================================= */
-
-const API_BASE_URL = 'http://https://gemkom-tracker-171910651490.europe-west1.run.app127.0.0.1:8000/api';
+const API_BASE_URL = 'https://gemkom-tracker-171910651490.europe-west1.run.app/api';
 
 // ---- DOM Elements ----
 const form = document.getElementById('add-note-form');
