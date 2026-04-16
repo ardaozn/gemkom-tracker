@@ -3,24 +3,24 @@
    Frontend JavaScript
    ========================================= */
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = 'http://https://gemkom-tracker-171910651490.europe-west1.run.app127.0.0.1:8000/api';
 
 // ---- DOM Elements ----
-const form         = document.getElementById('add-note-form');
-const submitBtn    = document.getElementById('submit-btn');
-const btnText      = submitBtn.querySelector('.btn-text');
-const btnLoader    = submitBtn.querySelector('.btn-loader');
-const machineSelect= document.getElementById('machine');
-const tbody        = document.getElementById('notes-tbody');
-const recordCountEl= document.getElementById('record-count');
+const form = document.getElementById('add-note-form');
+const submitBtn = document.getElementById('submit-btn');
+const btnText = submitBtn.querySelector('.btn-text');
+const btnLoader = submitBtn.querySelector('.btn-loader');
+const machineSelect = document.getElementById('machine');
+const tbody = document.getElementById('notes-tbody');
+const recordCountEl = document.getElementById('record-count');
 
-const filterMachine= document.getElementById('filter-machine');
-const filterDate   = document.getElementById('filter-date');
+const filterMachine = document.getElementById('filter-machine');
+const filterDate = document.getElementById('filter-date');
 const filterStatus = document.getElementById('filter-status');
 const resetFiltersBtn = document.getElementById('reset-filters');
 
-const toastEl     = document.getElementById('toast');
-const toastMsg    = document.getElementById('toast-message');
+const toastEl = document.getElementById('toast');
+const toastMsg = document.getElementById('toast-message');
 const toastIconEl = document.getElementById('toast-icon');
 const themeToggle = document.getElementById('theme-toggle');
 
@@ -114,8 +114,8 @@ function populateDropdowns(machines) {
     machines.forEach(m => {
         opts += `<option value="${m.id}">${m.name} (${m.code})</option>`;
     });
-    machineSelect.innerHTML  = '<option value="" disabled selected>Makine seçiniz...</option>' + opts;
-    filterMachine.innerHTML  = '<option value="">Tüm Makineler</option>' + opts;
+    machineSelect.innerHTML = '<option value="" disabled selected>Makine seçiniz...</option>' + opts;
+    filterMachine.innerHTML = '<option value="">Tüm Makineler</option>' + opts;
 }
 
 // =========================================
@@ -126,8 +126,8 @@ async function fetchSummary() {
         const res = await fetch(`${API_BASE_URL}/summary/`);
         if (res.ok) {
             const data = await res.json();
-            animateCount('count-working',     data.working || 0);
-            animateCount('count-waiting',     data.waiting || 0);
+            animateCount('count-working', data.working || 0);
+            animateCount('count-waiting', data.waiting || 0);
             animateCount('count-maintenance', data.maintenance_needed || 0);
         }
         const notesRes = await fetch(`${API_BASE_URL}/notes/`);
@@ -149,8 +149,8 @@ function animateCount(elId, target, isFloat = false) {
     const startTime = performance.now();
     function update(now) {
         const progress = Math.min((now - startTime) / duration, 1);
-        const eased    = 1 - Math.pow(1 - progress, 3);
-        const current  = start + (target - start) * eased;
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = start + (target - start) * eased;
         el.textContent = isFloat ? current.toFixed(1) : Math.round(current);
         if (progress < 1) requestAnimationFrame(update);
     }
@@ -164,10 +164,10 @@ async function fetchNotes() {
     try {
         const params = new URLSearchParams();
         if (filterMachine.value) params.append('machine', filterMachine.value);
-        if (filterDate.value)    params.append('date',    filterDate.value);
-        if (filterStatus.value)  params.append('status',  filterStatus.value);
+        if (filterDate.value) params.append('date', filterDate.value);
+        if (filterStatus.value) params.append('status', filterStatus.value);
 
-        const qs  = params.toString() ? `?${params.toString()}` : '';
+        const qs = params.toString() ? `?${params.toString()}` : '';
         const res = await fetch(`${API_BASE_URL}/notes/${qs}`);
 
         if (res.ok) {
@@ -191,8 +191,8 @@ function getProgressColor(percent) {
         return `rgb(220, ${g}, 30)`;
     } else {
         const r = Math.round(220 - (190 * (p - 50) / 50));
-        const g = Math.round(220 - (20  * (p - 50) / 50));
-        const b = Math.round(30  + (50  * (p - 50) / 50));
+        const g = Math.round(220 - (20 * (p - 50) / 50));
+        const b = Math.round(30 + (50 * (p - 50) / 50));
         return `rgb(${r}, ${g}, ${b})`;
     }
 }
@@ -219,10 +219,10 @@ function renderTable(notes) {
         const dateStr = new Date(note.date).toLocaleDateString('tr-TR', {
             day: '2-digit', month: 'short', year: 'numeric'
         });
-        const mName    = note.machine_details ? note.machine_details.name : '—';
-        const mCode    = note.machine_details ? note.machine_details.code : '';
-        const lostHours= note.lost_hours ? `${note.lost_hours}s` : '—';
-        const lostClass= note.lost_hours ? 'lost-hours-cell' : '';
+        const mName = note.machine_details ? note.machine_details.name : '—';
+        const mCode = note.machine_details ? note.machine_details.code : '';
+        const lostHours = note.lost_hours ? `${note.lost_hours}s` : '—';
+        const lostClass = note.lost_hours ? 'lost-hours-cell' : '';
 
         // ---- Progress bar ----
         const prog = progressData[note.id];
@@ -239,7 +239,7 @@ function renderTable(notes) {
                 percent = Math.min((elapsedHours / prog.estimatedHours) * 100, 100);
             }
 
-            const color   = getProgressColor(percent);
+            const color = getProgressColor(percent);
             const pctText = percent.toFixed(0);
 
             if (prog.completed) {
@@ -301,9 +301,9 @@ function renderTable(notes) {
             `;
         } else {
             const statusOptions = `
-                <option value="working"             ${note.status === 'working'             ? 'selected' : ''}>Çalışıyor</option>
-                <option value="waiting"             ${note.status === 'waiting'             ? 'selected' : ''}>Beklemede</option>
-                <option value="maintenance_needed"  ${note.status === 'maintenance_needed'  ? 'selected' : ''}>Bakım Gerekli</option>`;
+                <option value="working"             ${note.status === 'working' ? 'selected' : ''}>Çalışıyor</option>
+                <option value="waiting"             ${note.status === 'waiting' ? 'selected' : ''}>Beklemede</option>
+                <option value="maintenance_needed"  ${note.status === 'maintenance_needed' ? 'selected' : ''}>Bakım Gerekli</option>`;
             selectElement = `
                 <select class="status-select ${note.status}" onchange="updateNoteStatus(${note.id}, this.value)">
                     ${statusOptions}
@@ -364,7 +364,7 @@ function finishProgress(noteId) {
     if (!confirm('İşi bitirmek istediğinize emin misiniz?')) return;
     const data = loadProgress();
     if (data[noteId]) {
-        data[noteId].completed   = true;
+        data[noteId].completed = true;
         data[noteId].completedAt = Date.now();
         saveProgress(data);
         showToast('İş tamamlandı! ✓');
@@ -415,9 +415,9 @@ form.addEventListener('submit', async (e) => {
                 const progressData = loadProgress();
                 progressData[newNote.id] = {
                     estimatedHours,
-                    startTime:   Date.now(),
-                    completed:   false,
-                    canceled:    false,
+                    startTime: Date.now(),
+                    completed: false,
+                    canceled: false,
                     completedAt: null
                 };
                 saveProgress(progressData);
@@ -467,13 +467,13 @@ async function deleteNote(id) {
 //  Filters
 // =========================================
 filterMachine.addEventListener('change', fetchNotes);
-filterDate.addEventListener('change',    fetchNotes);
-filterStatus.addEventListener('change',  fetchNotes);
+filterDate.addEventListener('change', fetchNotes);
+filterStatus.addEventListener('change', fetchNotes);
 
 resetFiltersBtn.addEventListener('click', () => {
     filterMachine.value = '';
-    filterDate.value    = '';
-    filterStatus.value  = '';
+    filterDate.value = '';
+    filterStatus.value = '';
     fetchNotes();
 });
 
@@ -488,7 +488,7 @@ function startProgressUpdater() {
 
             const elapsedHours = (Date.now() - prog.startTime) / 3600000;
             const percent = Math.min((elapsedHours / prog.estimatedHours) * 100, 100);
-            const color   = getProgressColor(percent);
+            const color = getProgressColor(percent);
 
             const barEl = document.getElementById(`mbar-${noteId}`);
             const pctEl = document.getElementById(`mpct-${noteId}`);
