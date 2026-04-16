@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemkom - Günlük Makine Not Takip Sistemi</title>
+    <meta name="description"
+        content="Gemkom Makina İmalat - Günlük makine durum notlarının girilmesi ve takip edilmesi sistemi">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link rel="stylesheet" href="style.css?v=12">
+</head>
+
+<body>
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden">
+        <span class="toast-icon" id="toast-icon"></span>
+        <span class="toast-message" id="toast-message">İşlem başarılı!</span>
+    </div>
+
+    <div class="app-container">
+
+        <!-- Header Top (Sticky) -->
+        <div class="header-top">
+            <div class="logo-area">
+                <img src="assets/gemkom-logo.png" alt="Gemkom Logo" class="logo-img">
+                <div class="logo-text">
+                    <h1>GEMKOM</h1>
+                    <p>Makine Not Takip Sistemi</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="status-indicator">
+                    <span class="pulse-dot"></span>
+                    Sistem Aktif
+                </div>
+                <button class="theme-toggle" id="theme-toggle" title="Tema Değiştir">
+                    <i data-lucide="sun" class="theme-icon-light"></i>
+                    <i data-lucide="moon" class="theme-icon-dark"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header class="header">
+
+            <!-- Summary Cards -->
+            <div class="summary-cards" id="summary-cards">
+                <div class="card card-working">
+                    <div class="card-icon"><i data-lucide="settings"></i></div>
+                    <div class="card-info">
+                        <p class="card-label">Çalışıyor</p>
+                        <p class="card-count" id="count-working">0</p>
+                    </div>
+                </div>
+                <div class="card card-waiting">
+                    <div class="card-icon"><i data-lucide="clock"></i></div>
+                    <div class="card-info">
+                        <p class="card-label">Beklemede</p>
+                        <p class="card-count" id="count-waiting">0</p>
+                    </div>
+                </div>
+                <div class="card card-maintenance">
+                    <div class="card-icon"><i data-lucide="wrench"></i></div>
+                    <div class="card-info">
+                        <p class="card-label">Bakım Gerekli</p>
+                        <p class="card-count" id="count-maintenance">0</p>
+                    </div>
+                </div>
+                <div class="card card-total">
+                    <div class="card-icon"><i data-lucide="timer-off"></i></div>
+                    <div class="card-info">
+                        <p class="card-label">Toplam Kayıp Saat</p>
+                        <p class="card-count" id="count-lost-hours">0</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Add Note Section -->
+            <section class="section form-section">
+                <div class="section-header">
+                    <h2>
+                        <i data-lucide="plus-circle" class="section-icon"></i>
+                        Yeni Not Ekle
+                    </h2>
+                </div>
+                <form id="add-note-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="machine">Makine</label>
+                            <select id="machine" name="machine" required>
+                                <option value="" disabled selected>Makine seçiniz...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="date">Tarih</label>
+                            <input type="date" id="date" name="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Durum</label>
+                            <select id="status" name="status" required>
+                                <option value="" disabled selected>Durum seçiniz...</option>
+                                <option value="working">Çalışıyor</option>
+                                <option value="waiting">Beklemede</option>
+                                <option value="maintenance_needed">Bakım Gerekli</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="lost_hours">Kayıp Saat <span class="optional-tag">Opsiyonel</span></label>
+                            <input type="number" step="0.5" min="0" id="lost_hours" name="lost_hours" placeholder="0.0">
+                        </div>
+                        <div class="form-group">
+                            <label for="estimated_hours">Tahmini Süre (Saat) <span
+                                    class="optional-tag">Opsiyonel</span></label>
+                            <input type="number" step="0.5" min="0.5" id="estimated_hours" placeholder="Örn: 100">
+                        </div>
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <div class="form-actions-inline">
+                                <button type="reset" class="btn btn-ghost">Temizle</button>
+                                <button type="submit" class="btn btn-primary" id="submit-btn" disabled>
+                                    <i data-lucide="save" style="width:16px;height:16px"></i>
+                                    <span class="btn-text">Kaydet</span>
+                                    <span class="btn-loader hidden"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="description">Açıklama</label>
+                            <textarea id="description" name="description" rows="3"
+                                placeholder="Makine hakkında kısa açıklama giriniz..." required></textarea>
+                        </div>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Filters Section -->
+            <section class="section filters-section">
+                <div class="section-header">
+                    <h2>
+                        <i data-lucide="filter" class="section-icon"></i>
+                        Filtrele
+                    </h2>
+                    <button type="button" class="btn btn-outline-sm" id="reset-filters">
+                        <i data-lucide="rotate-ccw" style="width:13px;height:13px"></i>
+                        Sıfırla
+                    </button>
+                </div>
+                <div id="filter-form" class="filters-grid">
+                    <div class="filter-group">
+                        <label>Makine</label>
+                        <select id="filter-machine">
+                            <option value="">Tüm Makineler</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Tarih</label>
+                        <input type="date" id="filter-date">
+                    </div>
+                    <div class="filter-group">
+                        <label>Durum</label>
+                        <select id="filter-status">
+                            <option value="">Tüm Durumlar</option>
+                            <option value="working">Çalışıyor</option>
+                            <option value="waiting">Beklemede</option>
+                            <option value="maintenance_needed">Bakım Gerekli</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Table Section -->
+            <section class="section table-section">
+                <div class="section-header">
+                    <h2>
+                        <i data-lucide="list" class="section-icon"></i>
+                        Not Kayıtları
+                    </h2>
+                    <span class="record-count" id="record-count"></span>
+                </div>
+                <div class="table-responsive">
+                    <table id="notes-table">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Makine</th>
+                                <th>Durum</th>
+                                <th>Açıklama</th>
+                                <th>İlerleme</th>
+                                <th>Kayıp Saat</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="notes-tbody">
+                            <tr>
+                                <td colspan="7">
+                                    <div class="empty-state">
+                                        <p class="empty-state-text">Yükleniyor...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>© 2026 Gemkom Makina İmalat Taahhüt Sanayi ve Ticaret A.Ş.</p>
+        </footer>
+    </div>
+
+    <script src="script.js?v=12"></script>
+</body>
+
+</html>
