@@ -6,7 +6,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import Machine, Note
 from .serializers import MachineSerializer, NoteSerializer
 
-class MachineViewSet(viewsets.ReadOnlyModelViewSet):
+class MachineViewSet(viewsets.ModelViewSet):
     queryset = Machine.objects.all().order_by('name')
     serializer_class = MachineSerializer
 

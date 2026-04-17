@@ -36,6 +36,11 @@ const statusLabels = {
 let machinesData = [];
 let toastTimeout = null;
 
+const addMachineForm = document.getElementById('add-machine-form');
+const addMachineBtn  = document.getElementById('add-machine-btn');
+const machineNameInput = document.getElementById('machine-name');
+const machineCodeInput = document.getElementById('machine-code');
+
 // ---- Progress Tracking (localStorage) ----
 const PROGRESS_KEY = 'gemkom-progress';
 function loadProgress() {
@@ -107,6 +112,45 @@ async function fetchMachines() {
         console.error('Makineler yüklenemedi:', e);
     }
 }
+
+// =========================================
+//  API: Add Machine
+// =========================================
+addMachineForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = machineNameInput.value.trim();
+    const code = machineCodeInput.value.trim();
+    if (!name || !code) return;
+
+    const addMachineBtnText   = addMachineBtn.querySelector('.btn-text');
+    const addMachineBtnLoader = addMachineBtn.querySelector('.btn-loader');
+    addMachineBtn.disabled = true;
+    addMachineBtnText.classList.add('hidden');
+    addMachineBtnLoader.classList.remove('hidden');
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/machines/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, code })
+        });
+        if (res.ok) {
+            showToast(`"${name}" makinesi eklendi!`);
+            addMachineForm.reset();
+            await fetchMachines();
+        } else {
+            const err = await res.json().catch(() => ({}));
+            const msg = err.code ? `Kod: ${err.code[0]}` : (err.name ? err.name[0] : 'Makine eklenemedi!');
+            showToast(msg, 'error');
+        }
+    } catch {
+        showToast('Bağlantı hatası!', 'error');
+    } finally {
+        addMachineBtn.disabled = false;
+        addMachineBtnText.classList.remove('hidden');
+        addMachineBtnLoader.classList.add('hidden');
+    }
+});
 
 function populateDropdowns(machines) {
     let opts = '';

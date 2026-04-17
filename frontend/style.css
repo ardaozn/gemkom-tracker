@@ -389,6 +389,15 @@ h2 {
     gap: 0.85rem;
 }
 
+.machine-form-grid {
+    grid-template-columns: 1fr 1fr auto;
+    align-items: end;
+}
+
+.machine-form-grid .form-group:last-child {
+    min-width: 140px;
+}
+
 .form-group.full-width {
     grid-column: 1 / -1;
 }
