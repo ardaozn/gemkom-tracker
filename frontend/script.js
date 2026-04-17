@@ -106,10 +106,57 @@ async function fetchMachines() {
         if (res.ok) {
             machinesData = await res.json();
             populateDropdowns(machinesData);
+            renderMachineList(machinesData);
             submitBtn.disabled = false;
         }
     } catch (e) {
         console.error('Makineler yüklenemedi:', e);
+    }
+}
+
+// =========================================
+//  Render Machine List (with delete)
+// =========================================
+function renderMachineList(machines) {
+    const container = document.getElementById('machine-list');
+    if (!container) return;
+    if (machines.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    let html = '<div class="machine-chips">';
+    machines.forEach(m => {
+        html += `
+            <div class="machine-chip">
+                <span class="machine-chip-name">${m.name}</span>
+                <span class="machine-chip-code">${m.code}</span>
+                <button class="machine-chip-delete" onclick="deleteMachine(${m.id}, '${m.name.replace(/'/g, "\\'")}')"
+                        title="Makineyi Sil">
+                    <i data-lucide="trash-2" style="width:13px;height:13px"></i>
+                </button>
+            </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+    lucide.createIcons({ nodes: [container] });
+}
+
+// =========================================
+//  Delete Machine
+// =========================================
+async function deleteMachine(id, name) {
+    if (!confirm(`"${name}" makinesini silmek istediğinize emin misiniz?\nBu makineye ait tüm notlar da silinebilir!`)) return;
+    try {
+        const res = await fetch(`${API_BASE_URL}/machines/${id}/`, { method: 'DELETE' });
+        if (res.ok || res.status === 204) {
+            showToast(`"${name}" silindi.`);
+            await fetchMachines();
+            fetchNotes();
+        } else {
+            showToast('Makine silinemedi!', 'error');
+        }
+    } catch {
+        showToast('Bağlantı hatası!', 'error');
     }
 }
 

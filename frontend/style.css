@@ -398,6 +398,69 @@ h2 {
     min-width: 140px;
 }
 
+/* =========================================
+   Machine List (chips with delete)
+   ========================================= */
+
+.machine-list {
+    margin-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.85rem;
+}
+
+.machine-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.machine-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 99px;
+    padding: 0.3rem 0.4rem 0.3rem 0.75rem;
+    font-size: 0.78rem;
+    transition: border-color 0.15s ease;
+}
+
+.machine-chip:hover {
+    border-color: var(--border-hover);
+}
+
+.machine-chip-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.machine-chip-code {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.machine-chip-delete {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    color: var(--text-muted);
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.machine-chip-delete:hover {
+    background: var(--status-maintenance-bg);
+    color: var(--status-maintenance);
+}
+
 .form-group.full-width {
     grid-column: 1 / -1;
 }
