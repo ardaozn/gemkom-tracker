@@ -128,12 +128,9 @@ async function fetchSummary() {
             animateCount('count-working', data.working || 0);
             animateCount('count-waiting', data.waiting || 0);
             animateCount('count-maintenance', data.maintenance_needed || 0);
-        }
-        const notesRes = await fetch(`${API_BASE_URL}/notes/`);
-        if (notesRes.ok) {
-            const notes = await notesRes.json();
-            const totalLost = notes.reduce((sum, n) => sum + (parseFloat(n.lost_hours) || 0), 0);
-            animateCount('count-lost-hours', totalLost, true);
+            if (data.total_lost_hours !== undefined) {
+                animateCount('count-lost-hours', parseFloat(data.total_lost_hours) || 0, true);
+            }
         }
     } catch (e) {
         console.error('Özet yüklenemedi:', e);
