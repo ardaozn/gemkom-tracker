@@ -311,19 +311,23 @@ function renderTable(notes) {
         const lostHours = note.lost_hours ? `${note.lost_hours}s` : '—';
         const lostClass = note.lost_hours ? 'lost-hours-cell' : '';
 
-        // ---- Progress bar ----
-        const prog = progressData[note.id];
+        // ---- Progress bar (estimated_hours now comes from the backend) ----
+        const prog = progressData[note.id] || {};
         let progressHtml = '';
 
-        if (prog) {
+        const estHours = parseFloat(note.estimated_hours);
+
+        if (estHours > 0) {
+            const startTime = new Date(note.created_at).getTime();
             let percent;
+
             if (prog.completed) {
                 percent = 100;
             } else if (prog.canceled) {
-                percent = Math.min(((Date.now() - prog.startTime) / 3600000 / prog.estimatedHours) * 100, 100);
+                percent = Math.min(((Date.now() - startTime) / 3600000 / estHours) * 100, 100);
             } else {
-                const elapsedHours = (Date.now() - prog.startTime) / 3600000;
-                percent = Math.min((elapsedHours / prog.estimatedHours) * 100, 100);
+                const elapsedHours = (Date.now() - startTime) / 3600000;
+                percent = Math.min((elapsedHours / estHours) * 100, 100);
             }
 
             const color = getProgressColor(percent);
@@ -348,11 +352,13 @@ function renderTable(notes) {
                         <div style="display:flex;gap:4px;width:48px;flex-shrink:0;"></div>
                     </div>`;
             } else {
-                const safeDesc = note.description.replace(/'/g, "\\'");
                 progressHtml = `
                     <div class="mini-progress">
                         <div class="mini-progress-track">
-                            <div class="mini-progress-fill" id="mbar-${note.id}" style="width:${percent}%;background:${color}"></div>
+                            <div class="mini-progress-fill" id="mbar-${note.id}"
+                                 data-start="${new Date(note.created_at).getTime()}"
+                                 data-est="${estHours}"
+                                 style="width:${percent}%;background:${color}"></div>
                         </div>
                         <span class="mini-progress-label" id="mpct-${note.id}" style="color:${color}">${pctText}%</span>
                         <div style="display:flex;gap:4px">
@@ -485,8 +491,11 @@ form.addEventListener('submit', async (e) => {
     const formData = Object.fromEntries(new FormData(form).entries());
     if (!formData.lost_hours) delete formData.lost_hours;
 
-    const estimatedHours = parseFloat(document.getElementById('estimated_hours').value);
-    delete formData.estimated_hours;
+    // estimated_hours now goes to the backend directly (no localStorage for start time)
+    const estimatedHoursVal = parseFloat(document.getElementById('estimated_hours').value);
+    if (!estimatedHoursVal || estimatedHoursVal <= 0) {
+        delete formData.estimated_hours;
+    }
 
     try {
         const res = await fetch(`${API_BASE_URL}/notes/`, {
@@ -498,16 +507,13 @@ form.addEventListener('submit', async (e) => {
         if (res.ok) {
             const newNote = await res.json();
 
-            if (estimatedHours && estimatedHours > 0) {
+            // Only store completed/canceled state in localStorage (no startTime/estimatedHours needed)
+            if (newNote.estimated_hours) {
                 const progressData = loadProgress();
-                progressData[newNote.id] = {
-                    estimatedHours,
-                    startTime: Date.now(),
-                    completed: false,
-                    canceled: false,
-                    completedAt: null
-                };
-                saveProgress(progressData);
+                if (!progressData[newNote.id]) {
+                    progressData[newNote.id] = { completed: false, canceled: false, completedAt: null };
+                    saveProgress(progressData);
+                }
             }
 
             form.reset();
@@ -566,21 +572,25 @@ resetFiltersBtn.addEventListener('click', () => {
 
 // =========================================
 //  Live Progress Updater (every second)
+//  Reads start/est from data-* attributes — no localStorage dependency
 // =========================================
 function startProgressUpdater() {
     setInterval(() => {
-        const progressData = loadProgress();
-        for (const [noteId, prog] of Object.entries(progressData)) {
-            if (prog.completed || prog.canceled) continue;
+        document.querySelectorAll('.mini-progress-fill[data-start]').forEach(barEl => {
+            const startTime  = parseInt(barEl.dataset.start, 10);
+            const estHours   = parseFloat(barEl.dataset.est);
+            if (!startTime || !estHours) return;
 
-            const elapsedHours = (Date.now() - prog.startTime) / 3600000;
-            const percent = Math.min((elapsedHours / prog.estimatedHours) * 100, 100);
-            const color = getProgressColor(percent);
+            const elapsedHours = (Date.now() - startTime) / 3600000;
+            const percent      = Math.min((elapsedHours / estHours) * 100, 100);
+            const color        = getProgressColor(percent);
 
-            const barEl = document.getElementById(`mbar-${noteId}`);
-            const pctEl = document.getElementById(`mpct-${noteId}`);
-            if (barEl) { barEl.style.width = `${percent}%`; barEl.style.background = color; }
+            barEl.style.width      = `${percent}%`;
+            barEl.style.background = color;
+
+            const noteId = barEl.id.replace('mbar-', '');
+            const pctEl  = document.getElementById(`mpct-${noteId}`);
             if (pctEl) { pctEl.textContent = `${percent.toFixed(0)}%`; pctEl.style.color = color; }
-        }
+        });
     }, 1000);
 }
