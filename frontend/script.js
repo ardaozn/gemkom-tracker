@@ -311,14 +311,21 @@ function renderTable(notes) {
         const lostHours = note.lost_hours ? `${note.lost_hours}s` : '—';
         const lostClass = note.lost_hours ? 'lost-hours-cell' : '';
 
-        // ---- Progress bar (estimated_hours now comes from the backend) ----
+        // ---- Progress bar ----
         const prog = progressData[note.id] || {};
         let progressHtml = '';
 
-        const estHours = parseFloat(note.estimated_hours);
+        // Priority: backend estimated_hours → localStorage estimatedHours (backward compat)
+        const backendEst = parseFloat(note.estimated_hours);
+        const localEst   = parseFloat(prog.estimatedHours);
+        const estHours   = (backendEst > 0) ? backendEst : (localEst > 0 ? localEst : 0);
+
+        // Start time: use note.created_at when backend has the value, else localStorage startTime
+        const startTime  = (backendEst > 0)
+            ? new Date(note.created_at).getTime()
+            : (prog.startTime || new Date(note.created_at).getTime());
 
         if (estHours > 0) {
-            const startTime = new Date(note.created_at).getTime();
             let percent;
 
             if (prog.completed) {
@@ -339,7 +346,7 @@ function renderTable(notes) {
                         <div class="mini-progress-track">
                             <div class="mini-progress-fill" style="width:100%;background:#22c55e"></div>
                         </div>
-                        <span class="mini-progress-label" style="color:#22c55e">✓ ${pctText}%</span>
+                        <span class="mini-progress-label" style="color:#22c55e">✓ Tamamlandı</span>
                         <div style="display:flex;gap:4px;width:48px;flex-shrink:0;"></div>
                     </div>`;
             } else if (prog.canceled) {
@@ -348,7 +355,7 @@ function renderTable(notes) {
                         <div class="mini-progress-track">
                             <div class="mini-progress-fill" style="width:100%;background:#ef4444"></div>
                         </div>
-                        <span class="mini-progress-label" style="color:#ef4444">✕ İptal</span>
+                        <span class="mini-progress-label" style="color:#ef4444">✕ İptal Edildi</span>
                         <div style="display:flex;gap:4px;width:48px;flex-shrink:0;"></div>
                     </div>`;
             } else {
@@ -356,7 +363,7 @@ function renderTable(notes) {
                     <div class="mini-progress">
                         <div class="mini-progress-track">
                             <div class="mini-progress-fill" id="mbar-${note.id}"
-                                 data-start="${new Date(note.created_at).getTime()}"
+                                 data-start="${startTime}"
                                  data-est="${estHours}"
                                  style="width:${percent}%;background:${color}"></div>
                         </div>
@@ -456,27 +463,27 @@ async function updateNoteStatus(noteId, newStatus) {
 function finishProgress(noteId) {
     if (!confirm('İşi bitirmek istediğinize emin misiniz?')) return;
     const data = loadProgress();
-    if (data[noteId]) {
-        data[noteId].completed = true;
-        data[noteId].completedAt = Date.now();
-        saveProgress(data);
-        showToast('İş tamamlandı! ✓');
-        fetchNotes();
-    }
+    if (!data[noteId]) data[noteId] = {};   // create entry if missing
+    data[noteId].completed  = true;
+    data[noteId].canceled   = false;
+    data[noteId].completedAt = Date.now();
+    saveProgress(data);
+    showToast('İş tamamlandı! ✓');
+    fetchNotes();
 }
 
 // =========================================
-//  Cancel Progress (sadece local — açıklamaya yazı eklenmez)
+//  Cancel Progress
 // =========================================
 function cancelProgress(noteId) {
     if (!confirm('İşi iptal etmek istediğinize emin misiniz?')) return;
     const data = loadProgress();
-    if (data[noteId]) {
-        data[noteId].canceled = true;
-        saveProgress(data);
-        showToast('İş iptal edildi.');
-        fetchNotes();
-    }
+    if (!data[noteId]) data[noteId] = {};   // create entry if missing
+    data[noteId].canceled  = true;
+    data[noteId].completed = false;
+    saveProgress(data);
+    showToast('İş iptal edildi.');
+    fetchNotes();
 }
 
 // =========================================
