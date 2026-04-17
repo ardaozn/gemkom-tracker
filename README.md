@@ -1,102 +1,70 @@
-# Günlük Makine Not Takip Uygulaması
+# Gemkom Makine Takip Sistemi
 
-Bu proje stajyer görevi kapsamında geliştirilmiş olup, makinelerin günlük durumlarını (Çalışıyor, Beklemede, Bakım Gerekli vb.) ve notları takip etmenizi sağlayan uçtan uca bir sistemdir.
+Bu uygulama, fabrika ve atölye ortamındaki makinelerin günlük durumunu, arıza kayıtlarını ve iş süreçlerini kolayca takip etmeniz için geliştirilmiştir.
 
-## Kullanılan Teknolojiler
-- **Backend:** Python, Django, Django REST Framework, WhiteNoise (Static dosyalar için)
-- **Veritabanı:** Supabase PostgreSQL
-- **Frontend:** Vanilla HTML, CSS (Modern & Responsive UI), JavaScript (Fetch API)
-- **Deployment:** Google Cloud Run (Backend), GitHub Pages (Frontend)
-
-## 1. Lokal Kurulum Adımları (Yerel Bilgisayarda Çalıştırma)
-
-### A. Backend Kurulumu
-1. Bilgisayarınızda Python yüklü olduğundan emin olun.
-2. Terminal (veya Komut İstemi) üzerinden proje dizinindeki `backend` klasörüne girin:
-   ```bash
-   cd backend
-   ```
-3. Sanal ortam (venv) oluşturun ve aktif edin:
-   ```bash
-   python -m venv venv
-   # Windows için:
-   venv\Scripts\activate
-   # Mac/Linux için:
-   source venv/bin/activate
-   ```
-4. Gerekli kütüphaneleri kurun:
-   ```bash
-   pip install -r requirements.txt
-   ```
-5. `.env` Dosyası Ayarları:
-   `backend/.env` dosyası içindeki `[YOUR-PASSWORD]` yazan yere kendi Supabase veritabanı şifrenizi girdiğinizden emin olun. (Ayrıca URL'nin `postgresql://` ile başladığından emin olun).
-   
-6. Veritabanını hazırlayın (Supabase tablolarını oluşturur):
-   ```bash
-   python manage.py makemigrations tracker
-   python manage.py migrate
-   ```
-7. Arka plan uygulamasını başlatın:
-   ```bash
-   python manage.py runserver
-   ```
-   API artık `http://127.0.0.1:8000/api/` adresinde çalışıyor olacaktır.
-
-### B. Frontend Kurulumu
-Frontend için herhangi bir kütüphane/paket kurulumu gerekmez. Sadece `frontend` klasörü içindeki `index.html` dosyasına çift tıklayarak modern tarayıcınızda açmanız yeterlidir. (Eğer backend yerel sunucusunu başlattıysanız, arayüz anında backend ile haberleşmeye başlayacaktır).
-*Not: API bağlantı adresini `script.js` dosyasının ilk satırındaki `API_BASE_URL` değişkeninden yönetebilirsiniz.*
+**Uygulamaya Git:** [https://ardaozn.github.io/gemkom-tracker/](https://ardaozn.github.io/gemkom-tracker/)
 
 ---
 
-## 2. GitHub & Versiyon Kontrolü (Zorunlu İstekler)
+## 📌 Ne İşe Yarar?
 
-Stajyer görevinin beklentisi olan **Branch (Dal) kullanımı, anlamlı commitler ve Pull Request** işlemleri için aşağıdaki adımları bilgisayarınızda git yüklüyken uygulayınız:
-
-1. Proje ana klasöründe `git init` yapıp repoyu başlatın.
-2. İlk commit'iniz:
-   ```bash
-   git add .
-   git commit -m "initial project setup and structure"
-   ```
-3. Feature branch oluşturun:
-   ```bash
-   git checkout -b feature/frontend-api-integration
-   # ufak bir değişiklik yapıp kaydedin...
-   git add .
-   git commit -m "add api integration to frontend"
-   ```
-4. Main branchine dönüp GitHub'a pushlayınız ve Github arayüzünden Pull Request açınız.
+*   Makinelerin o anki durumunu (Çalışıyor, Beklemede, Arızalı vb.) anlık olarak izlemenizi sağlar.
+*   İşlerin ne kadar sürede tamamlanacağını takip etmenize yardımcı olur.
+*   Arıza nedeniyle kaybedilen toplam iş saatlerini hesaplar.
+*   Geçmişe dönük kayıtları arşivler ve ihtiyacınız olduğunda hızlıca bulmanızı sağlar.
 
 ---
 
-## 3. GitHub Pages ile Frontend Deployment
+## 🖱️ Nasıl Kullanılır?
 
-1. Projenizi GitHub'a pushladıktan sonra repository'nizin `Settings > Pages` kısmına gidin.
-2. `Source` olarak `Deploy from a branch` seçin ve `main` branch'ini seçerek alt klasör olarak (varsa) `/root` veya `frontend` klasörü ayarlamanızı yapın (GitHub Pages genelde root dizinindeki index.html'ye bakar. `frontend` dosyalarınızı root'a almanız GH Pages için en kolayıdır).
-3. Sayfa URL'nizi alın.
+### 1. Yeni Not Ekleme
+Ekranın üst kısmındaki formu doldurarak kayıt ekleyebilirsiniz:
+- **Makine:** Listeden ilgili makineyi seçin.
+- **Tahmini Süre:** İşin kaç saat süreceğini girin (bu, ilerleme çubuğunu başlatır).
+- **Kayıp Saat:** Varsa zaman kaybını girin.
+- **Not Ekle:** Butona bastığınızda kayıt tabloya eklenir.
+
+### 2. Durum Güncelleme
+Tabloda listelenen bir kaydın durumunu değiştirmek için:
+- "Durum" sütunundaki kutucuğa tıklayın.
+- Yeni durumu (Çalışıyor / Beklemede / Bakım Gerekli) seçin. Değişiklik anında kaydedilir.
+
+### 3. İlerleme Takibi
+Tahmini süre girilen işlerin yanında bir **İlerleme Çubuğu** belirir:
+- İş bittiğinde yanındaki **✓ (Yeşil)** butonuna basarak "Tamamlandı" yapabilirsiniz.
+- İşten vazgeçildiğinde **✕ (Kırmızı)** butonu ile iptal edebilirsiniz.
+
+### 4. Kayıt Silme
+Bir kaydı tamamen kaldırmak için satırın en sağındaki **🗑️ (Çöp Kutusu)** ikonuna tıklamanız ve onay vermeniz yeterlidir.
+
+### 5. Filtrelemek
+Çok fazla kayıt olduğunda aradığınızı bulmak için tablonun üstündeki filtre alanlarını kullanın:
+- Sadece belirli bir **makineyi** seçebilir,
+- Belirli bir **tarihe** bakabilir,
+- Veya sadece **"Arızalı"** olanları listeleyebilirsiniz.
 
 ---
 
-## 4. Google Cloud Run ile Backend Deployment
+## 🏗️ Proje Mimarisi ve Teknolojiler
 
-1. Google Cloud Console'da Cloud Run hizmetine gidin.
-2. `backend` klasörümüzde hazır bir `Dockerfile` bulunmaktadır.
-3. Reponuzu Cloud Run'a bağlayın (veya Google Build ile docker imajını pushlayın).
-4. Container Environment Variables kısmına şu değişkenleri ekleyin:
-   - `DATABASE_URL` = `postgresql://postgres:VERITABANISIFRENIZ@db...supabase.co:5432/postgres`
-   - `SECRET_KEY` = `rastgele_guvenli_bir_metin`
-   - `DEBUG` = `False`
-5. Deploy butonuna tıklayın ve size verilen URL'yi alın.
-6. **ÖNEMLİ:** Cloud Run URL'sini aldıktan sonra projenin `frontend/script.js` dosyasındaki `API_BASE_URL` adresini bu URL ile güncelleyin (`https://projeurlaniz.run.app/api`).
+Bu proje, modern web geliştirme standartlarına uygun olarak tasarlanmış iki ana katmandan oluşmaktadır:
+
+*   **Frontend (Arayüz):** Kullanıcı etkileşimleri için herhangi bir kütüphane/çerçeve kullanılmadan tamamen **Vanilla HTML, CSS ve JavaScript** ile donatılmıştır. Veri akışı `Fetch API` aracılığıyla sağlanır. GitHub Pages üzerinde barındırılmaktadır.
+*   **Backend (Sunucu):** Güçlü bir temel sunan **Python, Django ve Django REST Framework (DRF)** kullanılarak geliştirilmiştir. Tüm veri işleme mantığı ve API uçları bu katmandadır. Google Cloud Run üzerinde çalışmaktadır.
+*   **Veritabanı:** Bulut tabanlı, ölçeklenebilir ve güvenli **Supabase PostgreSQL** üzerine kuruludur.
 
 ---
 
-## 5. Bonus Görev: Cloud Scheduler
+## 📡 API Uçları (Endpoints)
 
-Backend kodumuzda günlük kontrol yapabilmesi için `/api/internal/daily-check/` POST endpoint'i hazır tanımlanmıştır! (Dosya: `backend/tracker/views.py` içerisinde `daily_check` metodu)
-Cloud Scheduler üzerinde:
-- **Frequency:** `0 0 * * *` (Her gün gece 12)
-- **Target:** HTTP
-- **URL:** `[CLOUD_RUN_URL]/api/internal/daily-check/`
-- **Metod:** `POST`
-olarak ayarlayıp görevi başarıyla tamamlayabilirsiniz.
+Bu uygulama ile konuşmak isteyen herhangi bir istemci (client) için aşağıdaki açık API uçları tasarlanmıştır:
+
+| Metod | İstek Adresi (URL) | Ne İşe Yarar? |
+| :--- | :--- | :--- |
+| **GET** | `/api/machines/` | Sistemde kayıtlı olan tüm makinelerin listesini kodlarıyla birlikte getirir. |
+| **GET** | `/api/notes/` | Atılmış olan tüm günlük makine notlarını listeler (tarih, durum, makine bazlı filtrelenebilir). |
+| **POST** | `/api/notes/` | Sisteme yepyeni bir makine notu ekler. |
+| **PATCH** | `/api/notes/{id}/` | Var olan bir notun güncel durumunu (ör. Çalışıyor -> Beklemede) değiştirir. |
+| **DELETE** | `/api/notes/{id}/` | Hatalı veya istenmeyen bir not kaydını sistemden tamamen siler. |
+| **GET** | `/api/summary/` | Arka planda tüm istatistikleri (aktif, bekleyen ve toplam kayıp saat) hesaplayıp tek bir özet paketi olarak sunar. |
+| **POST** | `/api/internal/daily-check/` | Cloud Scheduler tarafından her gece tetiklenip rutin kontrollerin yapılmasını sağlar. |
