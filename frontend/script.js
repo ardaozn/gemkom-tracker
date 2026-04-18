@@ -41,7 +41,10 @@ const addMachineBtn  = document.getElementById('add-machine-btn');
 const machineNameInput = document.getElementById('machine-name');
 const machineCodeInput = document.getElementById('machine-code');
 
-// ---- Progress Tracking (localStorage) ----
+// =========================================
+//  localStorage — SADECE YEDEK olarak kullanılır
+//  Asıl kayıt artık backend'de (is_completed, is_canceled)
+// =========================================
 const PROGRESS_KEY = 'gemkom-progress';
 function loadProgress() {
     try { return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {}; }
@@ -293,12 +296,7 @@ function renderTable(notes) {
         return;
     }
 
-    const statusIcons = {
-        'working': 'settings',
-        'waiting': 'clock',
-        'maintenance_needed': 'wrench'
-    };
-
+    // localStorage yedek verisi (geriye dönük uyumluluk için)
     const progressData = loadProgress();
     let html = '';
 
@@ -311,81 +309,80 @@ function renderTable(notes) {
         const lostHours = note.lost_hours ? `${note.lost_hours}s` : '—';
         const lostClass = note.lost_hours ? 'lost-hours-cell' : '';
 
-        // ---- Progress bar ----
-        const prog = progressData[note.id] || {};
-        let progressHtml = '';
+        // ─────────────────────────────────────────────────────────────
+        //  İlerleme durumunu belirle:
+        //  1. Backend'den gelen is_completed / is_canceled → EN GÜVENİLİR
+        //  2. localStorage yedek (eski notlar için geriye uyumluluk)
+        // ─────────────────────────────────────────────────────────────
+        const localProg = progressData[note.id] || {};
 
-        // Priority: backend estimated_hours → localStorage estimatedHours (backward compat)
+        const isCompleted = note.is_completed === true || localProg.completed === true;
+        const isCanceled  = note.is_canceled  === true || localProg.canceled  === true
+                            || (note.description && note.description.toLowerCase().includes('iptal'));
+
+        // estimated_hours: backend öncelikli, yoksa localStorage yedek
         const backendEst = parseFloat(note.estimated_hours);
-        const localEst   = parseFloat(prog.estimatedHours);
+        const localEst   = parseFloat(localProg.estimatedHours);
         const estHours   = (backendEst > 0) ? backendEst : (localEst > 0 ? localEst : 0);
 
-        // Start time: use note.created_at when backend has the value, else localStorage startTime
-        const startTime  = (backendEst > 0)
-            ? new Date(note.created_at).getTime()
-            : (prog.startTime || new Date(note.created_at).getTime());
+        // Başlangıç zamanı: her zaman created_at
+        const startTime = new Date(note.created_at).getTime();
 
-        if (estHours > 0) {
-            let percent;
+        // ─────────────────────────────────────────────────────────────
+        //  İlerleme HTML'i oluştur
+        // ─────────────────────────────────────────────────────────────
+        let progressHtml = '';
 
-            if (prog.completed) {
-                percent = 100;
-            } else if (prog.canceled) {
-                percent = Math.min(((Date.now() - startTime) / 3600000 / estHours) * 100, 100);
-            } else {
-                const elapsedHours = (Date.now() - startTime) / 3600000;
-                percent = Math.min((elapsedHours / estHours) * 100, 100);
-            }
-
+        if (isCompleted) {
+            // Tamamlandı — estimated_hours olsun olmasın göster
+            progressHtml = `
+                <div class="mini-progress">
+                    <div class="mini-progress-track">
+                        <div class="mini-progress-fill" style="width:100%;background:#22c55e"></div>
+                    </div>
+                    <span class="mini-progress-label" style="color:#22c55e">✓ Tamamlandı</span>
+                    <div style="display:flex;gap:4px;width:48px;flex-shrink:0;"></div>
+                </div>`;
+        } else if (isCanceled) {
+            // İptal edildi — estimated_hours olsun olmasın göster
+            progressHtml = `
+                <div class="mini-progress">
+                    <div class="mini-progress-track">
+                        <div class="mini-progress-fill" style="width:100%;background:#ef4444"></div>
+                    </div>
+                    <span class="mini-progress-label" style="color:#ef4444">✕ İptal Edildi</span>
+                    <div style="display:flex;gap:4px;width:48px;flex-shrink:0;"></div>
+                </div>`;
+        } else if (estHours > 0) {
+            // Aktif ilerleme barı
+            const elapsedHours = (Date.now() - startTime) / 3600000;
+            const percent = Math.min((elapsedHours / estHours) * 100, 100);
             const color = getProgressColor(percent);
             const pctText = percent.toFixed(0);
 
-            if (prog.completed) {
-                progressHtml = `
-                    <div class="mini-progress">
-                        <div class="mini-progress-track">
-                            <div class="mini-progress-fill" style="width:100%;background:#22c55e"></div>
-                        </div>
-                        <span class="mini-progress-label" style="color:#22c55e">✓ Tamamlandı</span>
-                        <div style="display:flex;gap:4px;width:48px;flex-shrink:0;"></div>
-                    </div>`;
-            } else if (prog.canceled) {
-                progressHtml = `
-                    <div class="mini-progress">
-                        <div class="mini-progress-track">
-                            <div class="mini-progress-fill" style="width:100%;background:#ef4444"></div>
-                        </div>
-                        <span class="mini-progress-label" style="color:#ef4444">✕ İptal Edildi</span>
-                        <div style="display:flex;gap:4px;width:48px;flex-shrink:0;"></div>
-                    </div>`;
-            } else {
-                progressHtml = `
-                    <div class="mini-progress">
-                        <div class="mini-progress-track">
-                            <div class="mini-progress-fill" id="mbar-${note.id}"
-                                 data-start="${startTime}"
-                                 data-est="${estHours}"
-                                 style="width:${percent}%;background:${color}"></div>
-                        </div>
-                        <span class="mini-progress-label" id="mpct-${note.id}" style="color:${color}">${pctText}%</span>
-                        <div style="display:flex;gap:4px">
-                            <button class="btn-finish-mini" onclick="finishProgress(${note.id})" title="İşi Bitir">
-                                <i data-lucide="check" style="width:12px;height:12px;color:#22c55e"></i>
-                            </button>
-                            <button class="btn-finish-mini" onclick="cancelProgress(${note.id})" title="İptal Et">
-                                <i data-lucide="x" style="width:12px;height:12px;color:#ef4444"></i>
-                            </button>
-                        </div>
-                    </div>`;
-            }
+            progressHtml = `
+                <div class="mini-progress">
+                    <div class="mini-progress-track">
+                        <div class="mini-progress-fill" id="mbar-${note.id}"
+                             data-start="${startTime}"
+                             data-est="${estHours}"
+                             style="width:${percent}%;background:${color}"></div>
+                    </div>
+                    <span class="mini-progress-label" id="mpct-${note.id}" style="color:${color}">${pctText}%</span>
+                    <div style="display:flex;gap:4px">
+                        <button class="btn-finish-mini" onclick="finishProgress(${note.id})" title="İşi Bitir">
+                            <i data-lucide="check" style="width:12px;height:12px;color:#22c55e"></i>
+                        </button>
+                        <button class="btn-finish-mini" onclick="cancelProgress(${note.id})" title="İptal Et">
+                            <i data-lucide="x" style="width:12px;height:12px;color:#ef4444"></i>
+                        </button>
+                    </div>
+                </div>`;
         } else {
             progressHtml = `<span class="no-progress">—</span>`;
         }
 
         // ---- Status dropdown ----
-        const isCompleted = prog && prog.completed;
-        const isCanceled = (prog && prog.canceled) || (note.description && note.description.toLowerCase().includes('iptal'));
-
         let selectElement = '';
         if (isCompleted) {
             selectElement = `
@@ -459,29 +456,59 @@ async function updateNoteStatus(noteId, newStatus) {
 
 // =========================================
 //  Finish Progress
+//  Backend'e PATCH + localStorage yedek
 // =========================================
-function finishProgress(noteId) {
+async function finishProgress(noteId) {
     if (!confirm('İşi bitirmek istediğinize emin misiniz?')) return;
+
+    // önce UI'ı hemen güncelle (optimistik)
     const data = loadProgress();
-    if (!data[noteId]) data[noteId] = {};   // create entry if missing
+    if (!data[noteId]) data[noteId] = {};
     data[noteId].completed  = true;
     data[noteId].canceled   = false;
     data[noteId].completedAt = Date.now();
     saveProgress(data);
+
+    // backend'e kaydet
+    try {
+        await fetch(`${API_BASE_URL}/notes/${noteId}/`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_completed: true, is_canceled: false })
+        });
+    } catch (e) {
+        console.warn('Backend güncellenemedi, localStorage yedekte:', e);
+    }
+
     showToast('İş tamamlandı! ✓');
     fetchNotes();
 }
 
 // =========================================
 //  Cancel Progress
+//  Backend'e PATCH + localStorage yedek
 // =========================================
-function cancelProgress(noteId) {
+async function cancelProgress(noteId) {
     if (!confirm('İşi iptal etmek istediğinize emin misiniz?')) return;
+
+    // önce UI'ı hemen güncelle (optimistik)
     const data = loadProgress();
-    if (!data[noteId]) data[noteId] = {};   // create entry if missing
+    if (!data[noteId]) data[noteId] = {};
     data[noteId].canceled  = true;
     data[noteId].completed = false;
     saveProgress(data);
+
+    // backend'e kaydet
+    try {
+        await fetch(`${API_BASE_URL}/notes/${noteId}/`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_canceled: true, is_completed: false })
+        });
+    } catch (e) {
+        console.warn('Backend güncellenemedi, localStorage yedekte:', e);
+    }
+
     showToast('İş iptal edildi.');
     fetchNotes();
 }
@@ -498,7 +525,6 @@ form.addEventListener('submit', async (e) => {
     const formData = Object.fromEntries(new FormData(form).entries());
     if (!formData.lost_hours) delete formData.lost_hours;
 
-    // estimated_hours now goes to the backend directly (no localStorage for start time)
     const estimatedHoursVal = parseFloat(document.getElementById('estimated_hours').value);
     if (!estimatedHoursVal || estimatedHoursVal <= 0) {
         delete formData.estimated_hours;
@@ -514,11 +540,17 @@ form.addEventListener('submit', async (e) => {
         if (res.ok) {
             const newNote = await res.json();
 
-            // Only store completed/canceled state in localStorage (no startTime/estimatedHours needed)
+            // localStorage'a da yedek olarak kaydet (geriye uyumluluk)
             if (newNote.estimated_hours) {
                 const progressData = loadProgress();
                 if (!progressData[newNote.id]) {
-                    progressData[newNote.id] = { completed: false, canceled: false, completedAt: null };
+                    progressData[newNote.id] = {
+                        completed: false,
+                        canceled: false,
+                        completedAt: null,
+                        estimatedHours: parseFloat(newNote.estimated_hours),
+                        startTime: new Date(newNote.created_at).getTime()
+                    };
                     saveProgress(progressData);
                 }
             }
@@ -579,7 +611,7 @@ resetFiltersBtn.addEventListener('click', () => {
 
 // =========================================
 //  Live Progress Updater (every second)
-//  Reads start/est from data-* attributes — no localStorage dependency
+//  Reads start/est from data-* attributes
 // =========================================
 function startProgressUpdater() {
     setInterval(() => {
