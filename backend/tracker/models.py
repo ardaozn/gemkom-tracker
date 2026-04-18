@@ -20,6 +20,8 @@ class Note(models.Model):
     description = models.TextField()
     lost_hours = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     estimated_hours = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
+    is_completed = models.BooleanField(default=False)
+    is_canceled = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
