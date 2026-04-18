@@ -14,7 +14,7 @@ class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.select_related('machine').all().order_by('-date', '-created_at')
     serializer_class = NoteSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['machine', 'date', 'status']
+    filterset_fields = ['machine', 'date', 'status', 'is_completed', 'is_canceled']
 
 @api_view(['GET'])
 def summary_view(request):

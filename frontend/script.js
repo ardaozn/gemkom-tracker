@@ -255,7 +255,17 @@ async function fetchNotes() {
         const params = new URLSearchParams();
         if (filterMachine.value) params.append('machine', filterMachine.value);
         if (filterDate.value) params.append('date', filterDate.value);
-        if (filterStatus.value) params.append('status', filterStatus.value);
+        if (filterStatus.value) {
+            if (filterStatus.value === 'completed') {
+                params.append('is_completed', 'true');
+            } else if (filterStatus.value === 'canceled') {
+                params.append('is_canceled', 'true');
+            } else {
+                params.append('status', filterStatus.value);
+                params.append('is_completed', 'false');
+                params.append('is_canceled', 'false');
+            }
+        }
 
         const qs = params.toString() ? `?${params.toString()}` : '';
         const res = await fetch(`${API_BASE_URL}/notes/${qs}`);
