@@ -18,7 +18,9 @@ class NoteViewSet(viewsets.ModelViewSet):
 
 @api_view(['GET'])
 def summary_view(request):
-    counts = Note.objects.values('status').annotate(total=Count('id'))
+    # Sadece aktif notları say (tamamlanan ve iptal edilenler hariç)
+    active_notes = Note.objects.filter(is_completed=False, is_canceled=False)
+    counts = active_notes.values('status').annotate(total=Count('id'))
     lost_hours_agg = Note.objects.aggregate(total_lost=Sum('lost_hours'))
     
     summary = {
