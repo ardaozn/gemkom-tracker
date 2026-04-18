@@ -365,7 +365,17 @@ function renderTable(notes) {
                 </div>`;
         } else if (estHours > 0) {
             // Aktif ilerleme barı
-            const elapsedHours = (Date.now() - startTime) / 3600000;
+            const totalPausedMs = localProg.totalPausedMs || 0;
+            const pausedAt = localProg.pausedAt || null;
+
+            let elapsedMs = Date.now() - startTime;
+            elapsedMs -= totalPausedMs;
+            if (pausedAt) {
+                elapsedMs -= (Date.now() - pausedAt);
+            }
+            elapsedMs = Math.max(0, elapsedMs);
+
+            const elapsedHours = elapsedMs / 3600000;
             const percent = Math.min((elapsedHours / estHours) * 100, 100);
             const color = getProgressColor(percent);
             const pctText = percent.toFixed(0);
@@ -376,6 +386,8 @@ function renderTable(notes) {
                         <div class="mini-progress-fill" id="mbar-${note.id}"
                              data-start="${startTime}"
                              data-est="${estHours}"
+                             data-paused-ms="${totalPausedMs}"
+                             data-paused-at="${pausedAt ? pausedAt : ''}"
                              style="width:${percent}%;background:${color}"></div>
                     </div>
                     <span class="mini-progress-label" id="mpct-${note.id}" style="color:${color}">${pctText}%</span>
@@ -444,6 +456,26 @@ function renderTable(notes) {
 //  Update Note Status (PATCH)
 // =========================================
 async function updateNoteStatus(noteId, newStatus) {
+    // ----------------------------------------------
+    // İlerlemeyi Dondurma Mantığı (LocalStorage)
+    // ----------------------------------------------
+    const data = loadProgress();
+    if (!data[noteId]) data[noteId] = { totalPausedMs: 0 };
+    if (data[noteId].totalPausedMs === undefined) data[noteId].totalPausedMs = 0;
+    
+    const isNowPaused = newStatus === 'waiting' || newStatus === 'maintenance_needed';
+    
+    // Eğer önceden duraklatıldıysa ve şimdi devam ediyorsa, geçen süreyi totalPausedMs'e ekle
+    if (!isNowPaused && data[noteId].pausedAt) {
+        data[noteId].totalPausedMs += (Date.now() - data[noteId].pausedAt);
+        data[noteId].pausedAt = null;
+    } 
+    // Eğer önceden çalışıyorsa ve şimdi duraklatıldıysa, pausedAt anını kaydet
+    else if (isNowPaused && !data[noteId].pausedAt) {
+        data[noteId].pausedAt = Date.now();
+    }
+    saveProgress(data);
+
     try {
         const res = await fetch(`${API_BASE_URL}/notes/${noteId}/`, {
             method: 'PATCH',
@@ -632,7 +664,21 @@ function startProgressUpdater() {
             const estHours   = parseFloat(barEl.dataset.est);
             if (!startTime || !estHours) return;
 
-            const elapsedHours = (Date.now() - startTime) / 3600000;
+            const totalPausedMs = parseInt(barEl.dataset.pausedMs, 10) || 0;
+            const pausedAt = parseInt(barEl.dataset.pausedAt, 10) || null;
+
+            let elapsedMs = Date.now() - startTime;
+            
+            // Daha önceden olan duraklamaları çıkar
+            elapsedMs -= totalPausedMs;
+            
+            // Eğer şu an duraklatılmışsa, duraklama anından şu ana kadar geçen süreyi de çıkar
+            if (pausedAt) {
+                 elapsedMs -= (Date.now() - pausedAt);
+            }
+            elapsedMs = Math.max(0, elapsedMs);
+
+            const elapsedHours = elapsedMs / 3600000;
             const percent      = Math.min((elapsedHours / estHours) * 100, 100);
             const color        = getProgressColor(percent);
 
