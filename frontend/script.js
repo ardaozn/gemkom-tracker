@@ -526,7 +526,9 @@ form.addEventListener('submit', async (e) => {
     if (!formData.lost_hours) delete formData.lost_hours;
 
     const estimatedHoursVal = parseFloat(document.getElementById('estimated_hours').value);
-    if (!estimatedHoursVal || estimatedHoursVal <= 0) {
+    if (estimatedHoursVal && estimatedHoursVal > 0) {
+        formData.estimated_hours = estimatedHoursVal;  // FormData'da name attr olmadığı için elle ekliyoruz
+    } else {
         delete formData.estimated_hours;
     }
 
